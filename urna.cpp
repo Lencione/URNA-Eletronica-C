@@ -39,15 +39,20 @@ void renderBorder(int x, int y, int cols, int rows);
 void renderButton(int x, int y, char *text);
 void createButtons(int x, int y);
 void renderLayout();
+Entourage* createCandidates();
 
 int main(){
-    
+
+    Entourage *entourages = createCandidates();
+
     system("color F0");
     system("mode con:cols=140 lines=45");
     
-    renderLayout();
+    //renderLayout();
     
     gotoxy(1,42);
+
+    printf("%s", entourages[0].president.name);
 
     return 0;
 }
@@ -140,4 +145,69 @@ void renderLayout(){
     createButtons(100,12);
 }
 
+//d estadual - 5
+//d federal - 4
+//senador - 3
+//gov - 2
+//pres - 2
+
+Entourage* createCandidates()
+{
+    Entourage entourages[4];
+    entourages[0].number = 11;
+    entourages[0].name = "AA";
+    entourages[0].president.number = 11;
+    entourages[0].president.name = "Gustavo Azevedo";
+    entourages[0].governor.number = 11;
+    entourages[0].governor.name = "Sophie Costa";
+    entourages[0].senator.number = 111;
+    entourages[0].senator.name = "Leandro Rezende";
+    entourages[0].federal.number = 1111;
+    entourages[0].federal.name = "Marcela Santos";
+    entourages[0].state.number = 11111;
+    entourages[0].state.name = "Lucas da Cunha";
+
+    entourages[1].number = 22;
+    entourages[1].name = "BB";
+    entourages[1].president.number = 22;
+    entourages[1].president.name = "Olivia da Mata";
+    entourages[1].governor.number = 22;
+    entourages[1].governor.name = "Cauã Correia";
+    entourages[1].senator.number = 222;
+    entourages[1].senator.name = "Amanda Barros";
+    entourages[1].federal.number = 2222;
+    entourages[1].federal.name = "Marcelo Novaes";
+    entourages[1].state.number = 22222;
+    entourages[1].state.name = "Elisa das Neves";
+
+    entourages[2].number = 33;
+    entourages[2].name = "CC";
+    entourages[2].president.number = 33;
+    entourages[2].president.name = "Luiz Miguel Cunha";
+    entourages[2].governor.number = 33;
+    entourages[2].governor.name = "Augusto Moura";
+    entourages[2].senator.number = 333;
+    entourages[2].senator.name = "Caio Costa";
+    entourages[2].federal.number = 3333;
+    entourages[2].federal.name ="Gabrielly Jesus";
+    entourages[2].state.number = 33333;
+    entourages[2].state.name = "Maria Alice Fernandes";
+
+    entourages[3].number = 44;
+    entourages[3].name = "DD"; 
+    entourages[3].president.number = 44;
+    entourages[3].president.name = "Thales Barros";
+    entourages[3].governor.number = 44;
+    entourages[3].governor.name = "Gabriel da Paz";
+    entourages[3].senator.number = 444;
+    entourages[3].senator.name = "Ana Lívia da Luz";
+    entourages[3].federal.number = 4444;
+    entourages[3].federal.name = "Clarice Silva";
+    entourages[3].state.number = 44444;
+    entourages[3].state.name = "Isabelly Pires";
+
+    printf("%s", entourages[3].president.name);
+
+    return entourages;
+}
 
