@@ -7,23 +7,14 @@
 #define COLS 140
 #define ROWS 40
 
-// STRUCTS
 typedef struct
 {
     char *number;
     char *name;
-} Person;
-
-typedef struct
-{
-    char *number;
-    char *name;
-    Person president;
-    Person governor;
-    Person senator;
-    Person federal;
-    Person state;
-} Entourage;
+    char *entourage;
+    char type;
+    int votes;
+} Candidate;
 
 typedef struct
 {
@@ -41,16 +32,16 @@ void renderBorder(int x, int y, int cols, int rows);
 void renderButton(int x, int y, char *text);
 void createButtons(int x, int y);
 void renderLayout();
-Entourage *createCandidates(Entourage *entourages);
+Candidate *createCandidates(Candidate *candidates);
 void resetCandidateList();
-void renderCandidateList(Entourage *candidates, char *type);
+void renderCandidateList(Candidate *candidates, char type);
 char* requestNumbers(int length, char* message);
 void resetVoteArea();
 
 int main()
 {
-    Entourage ent[4];
-    Entourage *candidates = createCandidates(ent);
+    Candidate ent[4];
+    Candidate *candidates = createCandidates(ent);
     char ra[8];
     char *number;
     Voter voters[100];
@@ -63,10 +54,11 @@ int main()
     
     // Contador de eleitores (voters)
 	int i = 0;
-	int opt = 0;
-    while(opt == 0){
+	
+    
+    while(1){
     	resetCandidateList();   	
-		
+		resetVoteArea();
 		bool existsRa = true;
 		do{
 			strcpy(ra,requestNumbers(8, "Digite seu RA"));
@@ -93,9 +85,6 @@ int main()
 		gotoxy(25,25);
 		printf("%s", voters[0].ra);
 		
-		opt = getch();
-		
-		resetVoteArea();
 	}
 	
 
@@ -210,61 +199,132 @@ void renderLayout()
     createButtons(100, 12);
 }
 
-Entourage *createCandidates(Entourage *entourages)
+Candidate *createCandidates(Candidate *candidates)
 {
-    entourages[0].number = "11";
-    entourages[0].name = "DC";
-    entourages[0].president.number = "11";
-    entourages[0].president.name = "SUPERMAN";
-    entourages[0].governor.number = "11";
-    entourages[0].governor.name = "BATMAN";
-    entourages[0].senator.number = "111";
-    entourages[0].senator.name = "MULHER MARAVILHA";
-    entourages[0].federal.number = "1111";
-    entourages[0].federal.name = "LANTERNA VERDE";
-    entourages[0].state.number = "11111";
-    entourages[0].state.name = "FLASH";
+    candidates[0].number = "11";
+    candidates[0].name = "SUPERMAN";
+    candidates[0].entourage = "DC";
+    candidates[0].type = 'p';
+    candidates[0].votes = 0;
 
-    entourages[1].number = "22";
-    entourages[1].name = "MARVEL";
-    entourages[1].president.number = "22";
-    entourages[1].president.name = "CAPITAO AMERICA";
-    entourages[1].governor.number = "22";
-    entourages[1].governor.name = "HOMEM FERRO";
-    entourages[1].senator.number = "222";
-    entourages[1].senator.name = "CAPITA MARVEL";
-    entourages[1].federal.number = "2222";
-    entourages[1].federal.name = "HULK";
-    entourages[1].state.number = "22222";
-    entourages[1].state.name = "HOMEM ARANHA";
+    candidates[1].number = "11";
+    candidates[1].name = "BATMAN";
+    candidates[1].entourage = "DC";
+    candidates[1].type = 'g';
+    candidates[1].votes = 0;
 
-    entourages[2].number = "33";
-    entourages[2].name = "THE BOYS";
-    entourages[2].president.number = "33";
-    entourages[2].president.name = "CAPITAO PATRIA";
-    entourages[2].governor.number = "33";
-    entourages[2].governor.name = "BRUTO";
-    entourages[2].senator.number = "333";
-    entourages[2].senator.name = "LUZ ESTRELA";
-    entourages[2].federal.number = "3333";
-    entourages[2].federal.name = "BLACK NOIR";
-    entourages[2].state.number = "3333";
-    entourages[2].state.name = "SOLDIER BOY";
+    candidates[2].number = "111";
+    candidates[2].name = "MULHER MARAVILHA";
+    candidates[2].entourage = "DC";
+    candidates[2].type = 's';
+    candidates[2].votes = 0;
+    
+    candidates[3].number = "1111";
+    candidates[3].name = "LANTERNA VERDE";
+    candidates[3].entourage = "DC";
+    candidates[3].type = 'f';
+    candidates[3].votes = 0;
+    
+    candidates[4].number = "11111";
+    candidates[4].name = "FLASH";
+    candidates[4].entourage = "DC";
+    candidates[4].type = 'e';
+    candidates[4].votes = 0;
 
-    entourages[3].number = "44";
-    entourages[3].name = "SIMPSONS";
-    entourages[3].president.number = "44";
-    entourages[3].president.name = "HOMER";
-    entourages[3].governor.number = "44";
-    entourages[3].governor.name = "MARGE";
-    entourages[3].senator.number = "444";
-    entourages[3].senator.name = "BARTH";
-    entourages[3].federal.number = "4444";
-    entourages[3].federal.name = "LISA";
-    entourages[3].state.number = "44444";
-    entourages[3].state.name = "MAGGIE";
+    // MARVEL
+    candidates[5].number = "22";
+    candidates[5].name = "CAPITAO AMERICA";
+    candidates[5].entourage = "MARVEL";
+    candidates[5].type = 'p';
+    candidates[5].votes = 0;
 
-    return entourages;
+    candidates[6].number = "22";
+    candidates[6].name = "HOMEM FERRO";
+    candidates[6].entourage = "MARVEL";
+    candidates[6].type = 'g';
+    candidates[6].votes = 0;
+
+    candidates[7].number = "222";
+    candidates[7].name = "CAPITA MARVEL";
+    candidates[7].entourage = "MARVEL";
+    candidates[7].type = 's';
+    candidates[7].votes = 0;
+    
+    candidates[8].number = "2222";
+    candidates[8].name = "HULK";
+    candidates[8].entourage = "MARVEL";
+    candidates[8].type = 'f';
+    candidates[8].votes = 0;
+    
+    candidates[9].number = "22222";
+    candidates[9].name = "HOMEM ARANHA";
+    candidates[9].entourage = "MARVEL";
+    candidates[9].type = 'e';
+    candidates[9].votes = 0;
+
+    // THE BOYS
+    candidates[10].number = "33";
+    candidates[10].name = "CAPITAO PATRIA";
+    candidates[10].entourage = "THE BOYS";
+    candidates[10].type = 'p';
+    candidates[10].votes = 0;
+
+    candidates[11].number = "33";
+    candidates[11].name = "BRUTO";
+    candidates[11].entourage = "THE BOYS";
+    candidates[11].type = 'g';
+    candidates[11].votes = 0;
+
+    candidates[12].number = "333";
+    candidates[12].name = "LUZ ESTRELA";
+    candidates[12].entourage = "THE BOYS";
+    candidates[12].type = 's';
+    candidates[12].votes = 0;
+    
+    candidates[13].number = "3333";
+    candidates[13].name = "BLACK NOIR";
+    candidates[13].entourage = "THE BOYS";
+    candidates[13].type = 'f';
+    candidates[13].votes = 0;
+    
+    candidates[14].number = "33333";
+    candidates[14].name = "SOLDIER BOY";
+    candidates[14].entourage = "THE BOYS";
+    candidates[14].type = 'e';
+    candidates[14].votes = 0;
+
+    // SIMPSONS
+    candidates[15].number = "44";
+    candidates[15].name = "HOMER";
+    candidates[15].entourage = "SIMPSONS";
+    candidates[15].type = 'p';
+    candidates[15].votes = 0;
+
+    candidates[16].number = "44";
+    candidates[16].name = "MARGE";
+    candidates[16].entourage = "SIMPSONS";
+    candidates[16].type = 'g';
+    candidates[16].votes = 0;
+
+    candidates[17].number = "444";
+    candidates[17].name = "BART";
+    candidates[17].entourage = "SIMPSONS";
+    candidates[17].type = 's';
+    candidates[17].votes = 0;
+    
+    candidates[18].number = "4444";
+    candidates[18].name = "LISA";
+    candidates[18].entourage = "SIMPSONS";
+    candidates[18].type = 'f';
+    candidates[18].votes = 0;
+    
+    candidates[19].number = "44444";
+    candidates[19].name = "MAGGIE";
+    candidates[19].entourage = "SIMPSONS";
+    candidates[19].type = 'e';
+    candidates[19].votes = 0;
+
+    return candidates;
 }
 
 void resetCandidateList(){
@@ -276,74 +336,41 @@ void resetCandidateList(){
     }
 }
 
-void renderCandidateList(Entourage *candidates, char *type)
+void renderCandidateList(Candidate *candidates, char type)
 {
     resetCandidateList();
     gotoxy(60, 2);
 
-    if (strcmp(type, "president") == 0)
+
+    switch (type)
     {
-        printf("CANDIDATOS A PRESIDENTE");
-        for (int i = 0; i < 4; i++)
-        {
-        	gotoxy(2 + (i * 30), 3);
-        	printf("%s", candidates[i].name);
-            gotoxy(2 + (i * 30), 4);
-            printf("%s", candidates[i].president.name);
-            gotoxy(2 + (i * 30), 5);
-            printf("Numero: %s", candidates[i].president.number);
-        }
+        case 'p':
+            printf("CANDIDATOS A PRESIDENTE");
+            break;
+        case 'g':
+            printf("CANDIDATOS A GOVERNADOR");
+            break;
+        case 'f':
+            printf("CANDIDATOS A DEPUTADO FEDERAL");
+            break;
+        case 's':
+            printf("CANDIDATOS A SENADOR");
+            break;
+        
+        default:
+            printf("CANDIDATOS A DEPUTADO ESTADUAL");
+            break;
     }
-    else if (strcmp(type, "governor") == 0)
+    
+    for (int i = 0; i < 20; i++)
     {
-        printf("CANDIDATOS A GOVERNADOR");
-        for (int i = 0; i < 4; i++)
-        {
-        	gotoxy(2 + (i * 30), 3);
-        	printf("%s", candidates[i].name);
+        if(candidates[i].type == type){
+            gotoxy(2 + (i * 30), 3);
+            printf("%s", candidates[i].entourage);
             gotoxy(2 + (i * 30), 4);
-            printf("%s", candidates[i].governor.name);
+            printf("%s", candidates[i].name);
             gotoxy(2 + (i * 30), 5);
-            printf("Numero: %s", candidates[i].governor.number);
-        }
-    }
-    else if (strcmp(type, "state") == 0)
-    {
-        printf("CANDIDATOS A DEPUTADO ESTADUAL");
-        for (int i = 0; i < 4; i++)
-        {
-        	gotoxy(2 + (i * 30), 3);
-        	printf("%s", candidates[i].name);
-            gotoxy(2 + (i * 30), 4);
-            printf("%s", candidates[i].state.name);
-            gotoxy(2 + (i * 30), 5);
-            printf("Numero: %s", candidates[i].state.number);
-        }
-    }
-    else if (strcmp(type, "senator") == 0)
-    {
-        printf("CANDIDATOS A SENADOR");
-        for (int i = 0; i < 4; i++)
-        {
-        	gotoxy(2 + (i * 30), 3);
-        	printf("%s", candidates[i].name);
-            gotoxy(2 + (i * 30), 4);
-            printf("%s", candidates[i].senator.name);
-            gotoxy(2 + (i * 30), 5);
-            printf("Numero: %s", candidates[i].senator.number);
-        }
-    }
-    else
-    {
-        printf("CANDIDATOS A DEPUTADO ESTADUAL");
-        for (int i = 0; i < 4; i++)
-        {
-        	gotoxy(2 + (i * 30), 3);
-        	printf("%s", candidates[i].name);
-            gotoxy(2 + (i * 30), 4);
-            printf("%s", candidates[i].federal.name);
-            gotoxy(2 + (i * 30), 5);
-            printf("Numero: %s", candidates[i].federal.number);
+            printf("Numero: %s", candidates[i].number);
         }
     }
 }
@@ -361,7 +388,6 @@ char* requestNumbers(int length, char* message){
 		do{
 			gotoxy(6 + (i*7),17);
 			let = getch();	
-			
 			if(let == 4){
 				// CTRL+D PRESSIONADO, SAI PARA CONTAR OS VOTOS
 				gotoxy(6,25);
