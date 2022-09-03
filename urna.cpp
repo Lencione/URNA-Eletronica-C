@@ -19,15 +19,14 @@ typedef struct
 typedef struct
 {
     char ra[8];
-    char *president;
-    char *governor;
-    char *senator;
-    char *federal;
-    char *state;
 } Voter;
+
+
 
 // FUNCOES
 void gotoxy(int x, int y);
+
+void hideCursorPosition();
 void renderBorder(int x, int y, int cols, int rows);
 void renderButton(int x, int y, char *text);
 void createButtons(int x, int y);
@@ -37,56 +36,154 @@ void resetCandidateList();
 void renderCandidateList(Candidate *candidates, char type);
 char* requestNumbers(int length, char* message);
 void resetVoteArea();
+void renderInformation(char *message);
+void renderCandidate(Candidate *candidates, int index);
+void renderEnd();
+int votesCompare (const void *x, const void *y);
+void showRank(Candidate *candidates, int qtt);
+
 
 int main()
 {
-    Candidate ent[4];
+    Candidate ent[30];
     Candidate *candidates = createCandidates(ent);
     char ra[8];
-    char *number;
+    char number[5];
     Voter voters[100];
+    int qttNumbers = 0; // Quantidade de numeros para voto
+    char voteType = '0'; // Tipo de voto
+    int i = 0; // Contador de eleitores
+    bool existsRa; // Verifica se RA já foi digitado anteriormente
+    char *phrase;  // Frase para Exibição
+    char voteConfirmation = 'n';
+    int candidateIndex;
 
-    
     system("color F0");
     system("mode con:cols=140 lines=40");
 
     renderLayout();
     
-    // Contador de eleitores (voters)
-	int i = 0;
-	
-    
     while(1){
     	resetCandidateList();   	
 		resetVoteArea();
-		bool existsRa = true;
+        // Variavel de verificação para saber se um RA já foi digitado ou não
+		existsRa = true;
 		do{
-			strcpy(ra,requestNumbers(8, "Digite seu RA"));
 			resetVoteArea();
-			if( i > 0){
-				for(int j = 0; j < i; j++){
-					if(strcmp(ra, voters[i].ra) == 0 ){
+			strcpy(ra,requestNumbers(8, "Digite seu RA"));
+            if(strcmp(ra, "exit") == 0){
+                break;
+            }
+			if( i >= 0){
+				for(int j = 0; j <=i ; j++){
+					if(strcmp(ra, voters[j].ra) == 0 ){
 						existsRa = true;
-						gotoxy(3,20);			
-						printf("RA ja existe no banco de dados, voce ja votou! Digite outro RA.");
-						Sleep(1);
+						renderInformation("RA ja existe no banco de dados, voce ja votou! Digite outro RA.");
+						Sleep(2000);
+                        break;
 					}else{
 						existsRa = false;
 					}
 				}	
-			}else{
-				existsRa = false;
 			}
 		}while(existsRa == true);
+        // Resetando variavel existsRa para a próxima iteração do loop
 		existsRa = true;
+
+        // Saindo para contagem dos votos!
+        if(strcmp(ra, "exit") == 0){
+            break;
+        }
+
 		// Copiando o valor da variavel temporaria RA para a struct voters.ra (eleitor)
-	
-		strcpy(voters[0].ra, ra);
-		gotoxy(25,25);
-		printf("%s", voters[0].ra);
+		strcpy(voters[i].ra, ra);
+
+        // Criar rotina para computar os votos:
+        qttNumbers = 0;
+        voteType = '0';
+        for(int j = 0; j < 5; j++)
+        {
+            // Definir parametros para a função de chamar a funcao de voto
+            if( j == 0){
+                qttNumbers = 4;
+                voteType = 'f';
+                phrase = "Deputado Federal";
+            }else if( j == 1){
+                qttNumbers = 5;
+                voteType = 'e';
+                phrase = "Deputado Estadual";
+            }else if( j == 2){
+                qttNumbers = 3;
+                voteType = 's';
+                phrase = "Senador";
+            }else if( j == 3){
+                qttNumbers = 2;
+                voteType = 'g';
+                phrase = "Governador";
+            }else{
+                qttNumbers = 2;
+                voteType = 'p';
+                phrase = "Presidente";
+            }
+
+            // Pedir confirmação do voto
+            voteConfirmation = 'n';
+            do{
+                candidateIndex = -1;
+                resetCandidateList();
+                renderCandidateList(candidates, voteType);
+                resetVoteArea();
+                strcpy(number, requestNumbers(qttNumbers, phrase));
+
+                // Pegando o INDEX do candidato
+                for(int k = 0; k < 25; k++){
+                    if(candidates[k].type == voteType){
+                        if(strcmp(number, candidates[k].number) == 0){
+                            candidateIndex = k;
+                            break;
+                        }
+                    }
+                }
+                // Se o candidato for NULO, define o index para o tipo de candidato (Senador, Estadual, Governador...)
+                if(candidateIndex == -1){
+                    for(int k = 25; k < 30; k++){
+                        if(candidates[k].type == voteType){
+                            candidateIndex = k;
+                        }
+                    }
+                }
+
+                renderCandidate(candidates, candidateIndex);
+                renderInformation("Voce confirma o voto? (s/n)");
+                while(1){
+                    voteConfirmation = getch();
+                    if (voteConfirmation == 's' || voteConfirmation == 'S' || voteConfirmation == 'n' || voteConfirmation == 'N'){
+                        break;
+                    }
+                }
+                
+            }while(voteConfirmation != 's');
+            candidates[candidateIndex].votes++;
+        }
+
+        renderEnd();
 		
+        i++;
 	}
-	
+
+    resetCandidateList();
+    resetVoteArea();
+    qsort(candidates, 30, sizeof(Candidate), votesCompare);
+   
+    showRank(candidates, 30);
+    renderInformation("Digite (s) para sair.");
+
+    while(1){
+        voteConfirmation = getch();
+        if(voteConfirmation == 's' || voteConfirmation == 'S'){
+            break;
+        }
+    }
 
     return 0;
 }
@@ -97,6 +194,15 @@ void gotoxy(int x, int y)
     coord.X = x;
     coord.Y = y;
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+}
+
+void hideCursorPosition(){
+	HANDLE hOut;
+    CONSOLE_CURSOR_INFO cCursorInfo;
+    hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    cCursorInfo.dwSize = 10;
+    cCursorInfo.bVisible = FALSE;
+    SetConsoleCursorInfo(hOut, &cCursorInfo);
 }
 
 void renderBorder(int x, int y, int rows, int cols)
@@ -178,6 +284,7 @@ void createButtons(int x, int y)
 
 void renderLayout()
 {
+    hideCursorPosition();
     // Criar borda total
     renderBorder(0, 0, ROWS, COLS);
 
@@ -324,12 +431,74 @@ Candidate *createCandidates(Candidate *candidates)
     candidates[19].type = 'e';
     candidates[19].votes = 0;
 
+     // NULO
+    candidates[20].number = "00";
+    candidates[20].name = "BRANCO";
+    candidates[20].entourage = "BRANCO";
+    candidates[20].type = 'p';
+    candidates[20].votes = 0;
+
+    candidates[21].number = "00";
+    candidates[21].name = "BRANCO";
+    candidates[21].entourage = "BRANCO";
+    candidates[21].type = 'g';
+    candidates[21].votes = 0;
+
+    candidates[22].number = "000";
+    candidates[22].name = "BRANCO";
+    candidates[22].entourage = "BRANCO";
+    candidates[22].type = 's';
+    candidates[22].votes = 0;
+    
+    candidates[23].number = "0000";
+    candidates[23].name = "BRANCO";
+    candidates[23].entourage = "BRANCO";
+    candidates[23].type = 'f';
+    candidates[23].votes = 0;
+    
+    candidates[24].number = "00000";
+    candidates[24].name = "BRANCO";
+    candidates[24].entourage = "BRANCO";
+    candidates[24].type = 'e';
+    candidates[24].votes = 0;
+
+     // BRANCO
+    candidates[25].number = "99";
+    candidates[25].name = "NULO";
+    candidates[25].entourage = "NULO";
+    candidates[25].type = 'p';
+    candidates[25].votes = 0;
+
+    candidates[26].number = "99";
+    candidates[26].name = "NULO";
+    candidates[26].entourage = "NULO";
+    candidates[26].type = 'g';
+    candidates[26].votes = 0;
+
+    candidates[27].number = "999";
+    candidates[27].name = "NULO";
+    candidates[27].entourage = "NULO";
+    candidates[27].type = 's';
+    candidates[27].votes = 0;
+    
+    candidates[28].number = "9999";
+    candidates[28].name = "NULO";
+    candidates[28].entourage = "NULO";
+    candidates[28].type = 'f';
+    candidates[28].votes = 0;
+    
+    candidates[29].number = "99999";
+    candidates[29].name = "NULO";
+    candidates[29].entourage = "NULO";
+    candidates[29].type = 'e';
+    candidates[29].votes = 0;
+
     return candidates;
 }
 
 void resetCandidateList(){
     for(int i = 2; i < 138; i++){
-        for(int j = 2; j < 5; j++){
+        for(int j = 2; j <= 5; j++){
             gotoxy(i,j);
             printf(" ");
         }
@@ -361,16 +530,17 @@ void renderCandidateList(Candidate *candidates, char type)
             printf("CANDIDATOS A DEPUTADO ESTADUAL");
             break;
     }
-    
+    int j = 0;
     for (int i = 0; i < 20; i++)
     {
         if(candidates[i].type == type){
-            gotoxy(2 + (i * 30), 3);
+            gotoxy(2 + (j * 30), 3);
             printf("%s", candidates[i].entourage);
-            gotoxy(2 + (i * 30), 4);
+            gotoxy(2 + (j * 30), 4);
             printf("%s", candidates[i].name);
-            gotoxy(2 + (i * 30), 5);
+            gotoxy(2 + (j * 30), 5);
             printf("Numero: %s", candidates[i].number);
+            j++;
         }
     }
 }
@@ -388,11 +558,13 @@ char* requestNumbers(int length, char* message){
 		do{
 			gotoxy(6 + (i*7),17);
 			let = getch();	
-			if(let == 4){
-				// CTRL+D PRESSIONADO, SAI PARA CONTAR OS VOTOS
-				gotoxy(6,25);
-				printf("CTRL + D PRESSIONADO");
-			}		
+			if(length == 8){
+                if(let == 4){
+                    // CTRL+D PRESSIONADO, SAI PARA CONTAR OS VOTOS
+                    return "exit";
+                }
+            }
+            		
 		}while(let < 48 || let > 57);
 		printf("%c", let);
 		numbers[i] = let;
@@ -409,4 +581,103 @@ void resetVoteArea(){
 			printf(" ");
 		}
 	}
+}
+
+
+void renderInformation(char *message){
+    gotoxy(3,35);
+    printf("%s", message);
+}
+
+void renderCandidate(Candidate *candidates, int index){
+    gotoxy(3,20);
+    if(index == -1){
+        printf("Canditado: NULO");
+    }else{
+        printf("Candidato: %s - Partido: %s", candidates[index].name, candidates[index].entourage);
+    }
+} 
+
+void renderEnd(){
+    resetCandidateList();
+    resetVoteArea();
+    gotoxy(28,18);
+    printf("CARREGANDO");
+    for(int i = 0; i < 20; i++){
+        gotoxy(28+i,19);
+        printf("%c", 219);
+        Sleep(400);
+    }
+    resetVoteArea();
+    gotoxy(28,18);
+    printf("%c%c%c %c %c%c %c%c",219,223,223,219,219,220,220,219);
+    gotoxy(28,19);
+    printf("%c%c%c %c %c %c %c",219,223,223,219,219,223,219);
+    gotoxy(28,20);
+    printf("%c   %c %c   %c",219,219,219,219);
+    Sleep(3000);
+    resetVoteArea();
+}
+
+int votesCompare (const void *x, const void *y) {
+    int first = ((Candidate *)x)->votes;
+    int second = ((Candidate *)y)->votes;
+    return (second - first);
+}
+
+void showRank(Candidate *candidates, int qtt){
+    gotoxy(3,8);
+    printf("Presidente");
+    int x = 2;
+    for(int i = 0; i < qtt; i++){
+        if(candidates[i].type == 'p'){
+            gotoxy(3,8+x);
+            printf("[%d] - %s", candidates[i].votes, candidates[i].name);
+            x++;
+        }
+    }
+
+    gotoxy(28,8);
+    printf("Governador");
+    x = 2;
+    for(int i = 0; i < qtt; i++){
+        if(candidates[i].type == 'g'){
+            gotoxy(28,8+x);
+            printf("[%d] - %s", candidates[i].votes, candidates[i].name);
+            x++;
+        }
+    }
+
+    gotoxy(53,8);
+    printf("Senador");
+    x = 2;
+    for(int i = 0; i < qtt; i++){
+        if(candidates[i].type == 's'){
+            gotoxy(53,8+x);
+            printf("[%d] - %s", candidates[i].votes, candidates[i].name);
+            x++;
+        }
+    }
+
+    gotoxy(3,20);
+    printf("Deputado Federal");
+    x = 2;
+    for(int i = 0; i < qtt; i++){
+        if(candidates[i].type == 'f'){
+            gotoxy(3,20+x);
+            printf("[%d] - %s", candidates[i].votes, candidates[i].name);
+            x++;
+        }
+    }
+
+    gotoxy(28 ,20);
+    printf("Deputado Estadual");
+    x = 2;
+    for(int i = 0; i < qtt; i++){
+        if(candidates[i].type == 'e'){
+            gotoxy(28 ,20+x);
+            printf("[%d] - %s", candidates[i].votes, candidates[i].name);
+            x++;
+        }
+    }
 }
