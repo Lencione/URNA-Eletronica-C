@@ -60,6 +60,7 @@ int main()
 
     system("color F0");
     system("mode con:cols=140 lines=40");
+    system("Left=290, Top=0");
     disableEditMode();
 
     renderLayout();
@@ -758,7 +759,7 @@ char *requestNumbers(int length, char *message)
                     }
                 }
                 // PARA NÃO PROCESSAR 1000X EM UM CLIQUE
-                Sleep(10);
+                Sleep(100);
                 mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
             }
 
