@@ -2,10 +2,13 @@
 #include <windows.h>
 #include <conio.h>
 #include <string.h>
+#include <mmsystem.h>
+
 
 // CONSTANTES - TAMANHO DE TELA
 #define COLS 140
 #define ROWS 40
+#define CURRENTFOLDER "C:\\Users\\User\\Documents\\Codes\\URNA\\"
 
 typedef struct
 {
@@ -21,8 +24,6 @@ typedef struct
     char ra[8];
 } Voter;
 
-
-
 // FUNCOES
 void gotoxy(int x, int y);
 
@@ -34,14 +35,17 @@ void renderLayout();
 Candidate *createCandidates(Candidate *candidates);
 void resetCandidateList();
 void renderCandidateList(Candidate *candidates, char type);
-char* requestNumbers(int length, char* message);
+char *requestNumbers(int length, char *message);
 void resetVoteArea();
 void renderInformation(char *message);
 void renderCandidate(Candidate *candidates, int index);
 void renderEnd();
-int votesCompare (const void *x, const void *y);
+int votesCompare(const void *x, const void *y);
 void showRank(Candidate *candidates, int qtt);
-
+COORD getMousexy();
+bool getConfirmButton();
+void disableEditMode();
+void executeSound(char *sound);
 
 int main()
 {
@@ -50,137 +54,210 @@ int main()
     char ra[8];
     char number[5];
     Voter voters[100];
-    int qttNumbers = 0; // Quantidade de numeros para voto
+    int qttNumbers = 0;  // Quantidade de numeros para voto
     char voteType = '0'; // Tipo de voto
-    int i = 0; // Contador de eleitores
-    bool existsRa; // Verifica se RA já foi digitado anteriormente
-    char *phrase;  // Frase para Exibição
+    int i = 0;           // Contador de eleitores
+    bool existsRa;       // Verifica se RA já foi digitado anteriormente
+    char *phrase;        // Frase para Exibição
     char voteConfirmation = 'n';
     int candidateIndex;
 
     system("color F0");
     system("mode con:cols=140 lines=40");
+    executeSound("windowsstart");
+    disableEditMode();
 
     renderLayout();
-    
-    while(1){
-    	resetCandidateList();   	
-		resetVoteArea();
+
+    while (1)
+    {
+        resetCandidateList();
+        resetVoteArea();
         // Variavel de verificação para saber se um RA já foi digitado ou não
-		existsRa = true;
-		do{
-			resetVoteArea();
-			strcpy(ra,requestNumbers(8, "Digite seu RA"));
-            if(strcmp(ra, "exit") == 0){
+        existsRa = true;
+        do
+        {
+            resetVoteArea();
+            renderButton(71, 33, "Encerrar");
+            strcpy(ra, requestNumbers(8, "Digite seu RA"));
+            if (strcmp(ra, "exit") == 0 || strcmp(ra, "reset") == 0)
+            {
                 break;
             }
-			if( i >= 0){
-				for(int j = 0; j <=i ; j++){
-					if(strcmp(ra, voters[j].ra) == 0 ){
-						existsRa = true;
-						renderInformation("RA ja existe no banco de dados, voce ja votou! Digite outro RA.");
-						Sleep(2000);
+
+            if (i >= 0)
+            {
+                for (int j = 0; j <= i; j++)
+                {
+                    if (strcmp(ra, voters[j].ra) == 0)
+                    {
+                        existsRa = true;
+                        renderInformation("RA ja existe no banco de dados, voce ja votou! Digite outro RA.");
+                        executeSound("pare");
+                        Sleep(2000);
                         break;
-					}else{
-						existsRa = false;
-					}
-				}	
-			}
-		}while(existsRa == true);
+                    }
+                    else
+                    {
+                        existsRa = false;
+                    }
+                }
+            }
+        } while (existsRa == true);
         // Resetando variavel existsRa para a próxima iteração do loop
-		existsRa = true;
+        existsRa = true;
 
         // Saindo para contagem dos votos!
-        if(strcmp(ra, "exit") == 0){
-            break;
-        }
-
-		// Copiando o valor da variavel temporaria RA para a struct voters.ra (eleitor)
-		strcpy(voters[i].ra, ra);
-
-        // Criar rotina para computar os votos:
-        qttNumbers = 0;
-        voteType = '0';
-        for(int j = 0; j < 5; j++)
+        if (strcmp(ra, "exit") == 0)
         {
-            // Definir parametros para a função de chamar a funcao de voto
-            if( j == 0){
-                qttNumbers = 4;
-                voteType = 'f';
-                phrase = "Deputado Federal";
-            }else if( j == 1){
-                qttNumbers = 5;
-                voteType = 'e';
-                phrase = "Deputado Estadual";
-            }else if( j == 2){
-                qttNumbers = 3;
-                voteType = 's';
-                phrase = "Senador";
-            }else if( j == 3){
-                qttNumbers = 2;
-                voteType = 'g';
-                phrase = "Governador";
+            resetVoteArea();
+            strcpy(ra, requestNumbers(6, "Digite a senha"));
+            if(strcmp(ra,"321987") == 0){
+                break;
             }else{
-                qttNumbers = 2;
-                voteType = 'p';
-                phrase = "Presidente";
+                strcpy(ra, "reset");
+                renderInformation("Senha invalida!");
+                executeSound("cavalo");
+                Sleep(1000);
             }
-
-            // Pedir confirmação do voto
-            voteConfirmation = 'n';
-            do{
-                candidateIndex = -1;
-                resetCandidateList();
-                renderCandidateList(candidates, voteType);
-                resetVoteArea();
-                strcpy(number, requestNumbers(qttNumbers, phrase));
-
-                // Pegando o INDEX do candidato
-                for(int k = 0; k < 25; k++){
-                    if(candidates[k].type == voteType){
-                        if(strcmp(number, candidates[k].number) == 0){
-                            candidateIndex = k;
-                            break;
-                        }
-                    }
-                }
-                // Se o candidato for NULO, define o index para o tipo de candidato (Senador, Estadual, Governador...)
-                if(candidateIndex == -1){
-                    for(int k = 25; k < 30; k++){
-                        if(candidates[k].type == voteType){
-                            candidateIndex = k;
-                        }
-                    }
-                }
-
-                renderCandidate(candidates, candidateIndex);
-                renderInformation("Voce confirma o voto? (s/n)");
-                while(1){
-                    voteConfirmation = getch();
-                    if (voteConfirmation == 's' || voteConfirmation == 'S' || voteConfirmation == 'n' || voteConfirmation == 'N'){
-                        break;
-                    }
-                }
-                
-            }while(voteConfirmation != 's');
-            candidates[candidateIndex].votes++;
         }
 
-        renderEnd();
-		
-        i++;
-	}
+        // Se resetar, começar de novo!
+
+        if (strcmp(ra, "reset") != 0)
+        {
+            // Copiando o valor da variavel temporaria RA para a struct voters.ra (eleitor)
+            strcpy(voters[i].ra, ra);
+
+            // Criar rotina para computar os votos:
+            qttNumbers = 0;
+            voteType = '0';
+            for (int j = 0; j < 5; j++)
+            {
+                // Definir parametros para a função de chamar a funcao de voto
+                if (j == 0)
+                {
+                    qttNumbers = 4;
+                    voteType = 'f';
+                    phrase = "Deputado Federal";
+                }
+                else if (j == 1)
+                {
+                    qttNumbers = 5;
+                    voteType = 'e';
+                    phrase = "Deputado Estadual";
+                }
+                else if (j == 2)
+                {
+                    qttNumbers = 3;
+                    voteType = 's';
+                    phrase = "Senador";
+                }
+                else if (j == 3)
+                {
+                    qttNumbers = 2;
+                    voteType = 'g';
+                    phrase = "Governador";
+                }
+                else
+                {
+                    qttNumbers = 2;
+                    voteType = 'p';
+                    phrase = "Presidente";
+                }
+
+                // Pedir confirmação do voto
+                voteConfirmation = 'n';
+                do
+                {
+                    candidateIndex = -1;
+                    resetCandidateList();
+                    renderCandidateList(candidates, voteType);
+                    resetVoteArea();
+                    strcpy(number, requestNumbers(qttNumbers, phrase));
+
+                    // SE FOR DIFERENTE DE RESET, FAÇA A ROTINA
+                    // CASO FOR RESET, COMEÇA DE NOVO
+                    if (strcmp(number, "reset") != 0)
+                    {
+                        // Pegando o INDEX do candidato
+                        for (int k = 0; k < 25; k++)
+                        {
+                            if (candidates[k].type == voteType)
+                            {
+                                if (strcmp(number, candidates[k].number) == 0)
+                                {
+                                    candidateIndex = k;
+                                    break;
+                                }
+                            }
+                        }
+                        // Se o candidato for NULO, define o index para o tipo de candidato (Senador, Estadual, Governador...)
+                        if (candidateIndex == -1)
+                        {
+                            for (int k = 25; k < 30; k++)
+                            {
+                                if (candidates[k].type == voteType)
+                                {
+                                    candidateIndex = k;
+                                }
+                            }
+                        }
+
+                        renderCandidate(candidates, candidateIndex);
+                        renderInformation("CONFIRMAR para confirmar e CORRIGIR para corrigir");
+                        while (1)
+                        {
+                            COORD coord = getMousexy();
+                            if (GetAsyncKeyState(0x01))
+                            {
+                                if (coord.X >= 118 && coord.X <= 130)
+                                {
+                                    if (coord.Y >= 32 && coord.Y <= 35)
+                                    {
+                                        voteConfirmation = 's';
+                                        break;
+                                    }
+                                }
+
+                                if (coord.X >= 105 && coord.X <= 116)
+                                {
+                                    if (coord.Y >= 32 && coord.Y <= 35)
+                                    {
+                                        voteConfirmation = 'n';
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                } while (voteConfirmation != 's');
+                candidates[candidateIndex].votes++;
+                executeSound("urna");
+            }
+            renderEnd();
+            
+
+            i++;
+        }
+    }
 
     resetCandidateList();
     resetVoteArea();
     qsort(candidates, 30, sizeof(Candidate), votesCompare);
-   
+
     showRank(candidates, 30);
     renderInformation("Digite (s) para sair.");
 
-    while(1){
+    while (1)
+    {
         voteConfirmation = getch();
-        if(voteConfirmation == 's' || voteConfirmation == 'S'){
+        if (voteConfirmation == 's' || voteConfirmation == 'S')
+        {
+            executeSound("windows");
+            Sleep(2800);
+
             break;
         }
     }
@@ -196,8 +273,9 @@ void gotoxy(int x, int y)
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
-void hideCursorPosition(){
-	HANDLE hOut;
+void hideCursorPosition()
+{
+    HANDLE hOut;
     CONSOLE_CURSOR_INFO cCursorInfo;
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     cCursorInfo.dwSize = 10;
@@ -325,13 +403,13 @@ Candidate *createCandidates(Candidate *candidates)
     candidates[2].entourage = "DC";
     candidates[2].type = 's';
     candidates[2].votes = 0;
-    
+
     candidates[3].number = "1111";
     candidates[3].name = "LANTERNA VERDE";
     candidates[3].entourage = "DC";
     candidates[3].type = 'f';
     candidates[3].votes = 0;
-    
+
     candidates[4].number = "11111";
     candidates[4].name = "FLASH";
     candidates[4].entourage = "DC";
@@ -356,13 +434,13 @@ Candidate *createCandidates(Candidate *candidates)
     candidates[7].entourage = "MARVEL";
     candidates[7].type = 's';
     candidates[7].votes = 0;
-    
+
     candidates[8].number = "2222";
     candidates[8].name = "HULK";
     candidates[8].entourage = "MARVEL";
     candidates[8].type = 'f';
     candidates[8].votes = 0;
-    
+
     candidates[9].number = "22222";
     candidates[9].name = "HOMEM ARANHA";
     candidates[9].entourage = "MARVEL";
@@ -387,13 +465,13 @@ Candidate *createCandidates(Candidate *candidates)
     candidates[12].entourage = "THE BOYS";
     candidates[12].type = 's';
     candidates[12].votes = 0;
-    
+
     candidates[13].number = "3333";
     candidates[13].name = "BLACK NOIR";
     candidates[13].entourage = "THE BOYS";
     candidates[13].type = 'f';
     candidates[13].votes = 0;
-    
+
     candidates[14].number = "33333";
     candidates[14].name = "SOLDIER BOY";
     candidates[14].entourage = "THE BOYS";
@@ -418,51 +496,51 @@ Candidate *createCandidates(Candidate *candidates)
     candidates[17].entourage = "SIMPSONS";
     candidates[17].type = 's';
     candidates[17].votes = 0;
-    
+
     candidates[18].number = "4444";
     candidates[18].name = "LISA";
     candidates[18].entourage = "SIMPSONS";
     candidates[18].type = 'f';
     candidates[18].votes = 0;
-    
+
     candidates[19].number = "44444";
     candidates[19].name = "MAGGIE";
     candidates[19].entourage = "SIMPSONS";
     candidates[19].type = 'e';
     candidates[19].votes = 0;
 
-     // NULO
-    candidates[20].number = "00";
+    // NULO
+    candidates[20].number = "white";
     candidates[20].name = "BRANCO";
     candidates[20].entourage = "BRANCO";
     candidates[20].type = 'p';
     candidates[20].votes = 0;
 
-    candidates[21].number = "00";
+    candidates[21].number = "white";
     candidates[21].name = "BRANCO";
     candidates[21].entourage = "BRANCO";
     candidates[21].type = 'g';
     candidates[21].votes = 0;
 
-    candidates[22].number = "000";
+    candidates[22].number = "white";
     candidates[22].name = "BRANCO";
     candidates[22].entourage = "BRANCO";
     candidates[22].type = 's';
     candidates[22].votes = 0;
-    
-    candidates[23].number = "0000";
+
+    candidates[23].number = "white";
     candidates[23].name = "BRANCO";
     candidates[23].entourage = "BRANCO";
     candidates[23].type = 'f';
     candidates[23].votes = 0;
-    
-    candidates[24].number = "00000";
+
+    candidates[24].number = "white";
     candidates[24].name = "BRANCO";
     candidates[24].entourage = "BRANCO";
     candidates[24].type = 'e';
     candidates[24].votes = 0;
 
-     // BRANCO
+    // BRANCO
     candidates[25].number = "99";
     candidates[25].name = "NULO";
     candidates[25].entourage = "NULO";
@@ -480,13 +558,13 @@ Candidate *createCandidates(Candidate *candidates)
     candidates[27].entourage = "NULO";
     candidates[27].type = 's';
     candidates[27].votes = 0;
-    
+
     candidates[28].number = "9999";
     candidates[28].name = "NULO";
     candidates[28].entourage = "NULO";
     candidates[28].type = 'f';
     candidates[28].votes = 0;
-    
+
     candidates[29].number = "99999";
     candidates[29].name = "NULO";
     candidates[29].entourage = "NULO";
@@ -496,10 +574,13 @@ Candidate *createCandidates(Candidate *candidates)
     return candidates;
 }
 
-void resetCandidateList(){
-    for(int i = 2; i < 138; i++){
-        for(int j = 2; j <= 5; j++){
-            gotoxy(i,j);
+void resetCandidateList()
+{
+    for (int i = 2; i < 138; i++)
+    {
+        for (int j = 2; j <= 5; j++)
+        {
+            gotoxy(i, j);
             printf(" ");
         }
     }
@@ -510,30 +591,30 @@ void renderCandidateList(Candidate *candidates, char type)
     resetCandidateList();
     gotoxy(60, 2);
 
-
     switch (type)
     {
-        case 'p':
-            printf("CANDIDATOS A PRESIDENTE");
-            break;
-        case 'g':
-            printf("CANDIDATOS A GOVERNADOR");
-            break;
-        case 'f':
-            printf("CANDIDATOS A DEPUTADO FEDERAL");
-            break;
-        case 's':
-            printf("CANDIDATOS A SENADOR");
-            break;
-        
-        default:
-            printf("CANDIDATOS A DEPUTADO ESTADUAL");
-            break;
+    case 'p':
+        printf("CANDIDATOS A PRESIDENTE");
+        break;
+    case 'g':
+        printf("CANDIDATOS A GOVERNADOR");
+        break;
+    case 'f':
+        printf("CANDIDATOS A DEPUTADO FEDERAL");
+        break;
+    case 's':
+        printf("CANDIDATOS A SENADOR");
+        break;
+
+    default:
+        printf("CANDIDATOS A DEPUTADO ESTADUAL");
+        break;
     }
     int j = 0;
     for (int i = 0; i < 20; i++)
     {
-        if(candidates[i].type == type){
+        if (candidates[i].type == type)
+        {
             gotoxy(2 + (j * 30), 3);
             printf("%s", candidates[i].entourage);
             gotoxy(2 + (j * 30), 4);
@@ -545,139 +626,366 @@ void renderCandidateList(Candidate *candidates, char type)
     }
 }
 
-char* requestNumbers(int length, char* message){
-	gotoxy(3,13);
-	printf("%s: ", message);
-	char numbers[length];
-	
-    for(int i = 0; i < length; i++){
-		renderBorder(3 + (7*i),15,5,7);
-	}
-	for(int i = 0; i < length; i++){
-		char let = 0;
-		do{
-			gotoxy(6 + (i*7),17);
-			let = getch();	
-			if(length == 8){
-                if(let == 4){
-                    // CTRL+D PRESSIONADO, SAI PARA CONTAR OS VOTOS
-                    return "exit";
+char *requestNumbers(int length, char *message)
+{
+    gotoxy(3, 13);
+    printf("%s: ", message);
+    char numbers[length];
+
+    for (int i = 0; i < length; i++)
+    {
+        renderBorder(3 + (7 * i), 15, 5, 7);
+    }
+    for (int i = 0; i < length; i++)
+    {
+        char let = 0;
+        do
+        {
+
+            while (1)
+            {
+                COORD coord = getMousexy();
+                if (GetAsyncKeyState(0x01))
+                {
+                    if (coord.X >= 100 && coord.X <= 106)
+                    {
+                        if (coord.Y >= 12 && coord.Y <= 16)
+                        {
+                            let = '1';
+                            break;
+                        }
+                    }
+
+                    if (coord.X >= 108 && coord.X <= 114)
+                    {
+                        if (coord.Y >= 12 && coord.Y <= 16)
+                        {
+                            let = '2';
+                            break;
+                        }
+                    }
+
+                    if (coord.X >= 116 && coord.X <= 122)
+                    {
+                        if (coord.Y >= 12 && coord.Y <= 16)
+                        {
+                            let = '3';
+                            break;
+                        }
+                    }
+
+                    if (coord.X >= 100 && coord.X <= 106)
+                    {
+                        if (coord.Y >= 17 && coord.Y <= 21)
+                        {
+                            let = '4';
+                            break;
+                        }
+                    }
+
+                    if (coord.X >= 108 && coord.X <= 114)
+                    {
+                        if (coord.Y >= 17 && coord.Y <= 21)
+                        {
+                            let = '5';
+                            break;
+                        }
+                    }
+
+                    if (coord.X >= 116 && coord.X <= 122)
+                    {
+                        if (coord.Y >= 17 && coord.Y <= 21)
+                        {
+                            let = '6';
+                            break;
+                        }
+                    }
+
+                    if (coord.X >= 100 && coord.X <= 106)
+                    {
+                        if (coord.Y >= 22 && coord.Y <= 26)
+                        {
+                            let = '7';
+                            break;
+                        }
+                    }
+
+                    if (coord.X >= 108 && coord.X <= 114)
+                    {
+                        if (coord.Y >= 22 && coord.Y <= 26)
+                        {
+                            let = '8';
+                            break;
+                        }
+                    }
+
+                    if (coord.X >= 116 && coord.X <= 122)
+                    {
+                        if (coord.Y >= 22 && coord.Y <= 26)
+                        {
+                            let = '9';
+                            break;
+                        }
+                    }
+
+                    if (coord.X >= 107 && coord.X <= 114)
+                    {
+                        if (coord.Y >= 27 && coord.Y <= 31)
+                        {
+                            let = '0';
+                            break;
+                        }
+                    }
+                    // Corrige
+                    if (coord.X >= 105 && coord.X <= 117)
+                    {
+                        if (coord.Y >= 32 && coord.Y <= 35)
+                        {
+                            return "reset";
+                            break;
+                        }
+                    }
+                    // Branco
+                    if (length != 8)
+                    {
+                        if (coord.X >= 93 && coord.X <= 104)
+                        {
+                            if (coord.Y >= 32 && coord.Y <= 36)
+                            {
+                                return "white";
+                                break;
+                            }
+                        }
+                    }
+                    if (length == 8)
+                    {
+                        if (coord.X >= 71 && coord.X <= 84)
+                        {
+                            if (coord.Y >= 33 && coord.Y <= 37)
+                            {
+                                return "exit";
+                                break;
+                            }
+                        }
+                    }
                 }
+                // PARA NÃO PROCESSAR 1000X EM UM CLIQUE
+                Sleep(100);
+                mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
             }
-            		
-		}while(let < 48 || let > 57);
-		printf("%c", let);
-		numbers[i] = let;
-	}
-	numbers[length] = '\0';
-	gotoxy(25,25);
-	
-	return numbers;
+
+        } while (let < 48 || let > 57);
+        gotoxy(6 + (i * 7), 17);
+        printf("%c", let);
+        numbers[i] = let;
+    }
+    numbers[length] = '\0';
+    gotoxy(25, 25);
+
+    return numbers;
 }
-void resetVoteArea(){
-	for(int i = 2; i < 84; i++){
-		for(int j = 8; j < 38; j++){
-			gotoxy(i,j);
-			printf(" ");
-		}
-	}
+void resetVoteArea()
+{
+    for (int i = 2; i < 85; i++)
+    {
+        for (int j = 8; j < 38; j++)
+        {
+            gotoxy(i, j);
+            printf(" ");
+        }
+    }
 }
 
-
-void renderInformation(char *message){
-    gotoxy(3,35);
+void renderInformation(char *message)
+{
+    gotoxy(3, 35);
     printf("%s", message);
 }
 
-void renderCandidate(Candidate *candidates, int index){
-    gotoxy(3,20);
-    if(index == -1){
+void renderCandidate(Candidate *candidates, int index)
+{
+    gotoxy(3, 20);
+    if (index == -1)
+    {
         printf("Canditado: NULO");
-    }else{
+    }
+    else
+    {
         printf("Candidato: %s - Partido: %s", candidates[index].name, candidates[index].entourage);
     }
-} 
+}
 
-void renderEnd(){
+void renderEnd()
+{
     resetCandidateList();
     resetVoteArea();
-    gotoxy(28,18);
+    gotoxy(28, 18);
     printf("CARREGANDO");
-    for(int i = 0; i < 20; i++){
-        gotoxy(28+i,19);
+    for (int i = 0; i < 20; i++)
+    {
+        gotoxy(28 + i, 19);
         printf("%c", 219);
-        Sleep(400);
+        Sleep(200);
     }
     resetVoteArea();
-    gotoxy(28,18);
-    printf("%c%c%c %c %c%c %c%c",219,223,223,219,219,220,220,219);
-    gotoxy(28,19);
-    printf("%c%c%c %c %c %c %c",219,223,223,219,219,223,219);
-    gotoxy(28,20);
-    printf("%c   %c %c   %c",219,219,219,219);
-    Sleep(3000);
+    
+    gotoxy(28, 18);
+    printf("%c%c%c %c %c%c %c%c", 219, 223, 223, 219, 219, 220, 220, 219);
+    gotoxy(28, 19);
+    printf("%c%c%c %c %c %c %c", 219, 223, 223, 219, 219, 223, 219);
+    gotoxy(28, 20);
+    printf("%c   %c %c   %c", 219, 219, 219, 219);
+    executeSound("urnafinal");
+    Sleep(1500);
     resetVoteArea();
 }
 
-int votesCompare (const void *x, const void *y) {
+int votesCompare(const void *x, const void *y)
+{
     int first = ((Candidate *)x)->votes;
     int second = ((Candidate *)y)->votes;
     return (second - first);
 }
 
-void showRank(Candidate *candidates, int qtt){
-    gotoxy(3,8);
+void showRank(Candidate *candidates, int qtt)
+{
+    gotoxy(3, 8);
     printf("Presidente");
     int x = 2;
-    for(int i = 0; i < qtt; i++){
-        if(candidates[i].type == 'p'){
-            gotoxy(3,8+x);
+    for (int i = 0; i < qtt; i++)
+    {
+        if (candidates[i].type == 'p')
+        {
+            gotoxy(3, 8 + x);
             printf("[%d] - %s", candidates[i].votes, candidates[i].name);
             x++;
         }
     }
 
-    gotoxy(28,8);
+    gotoxy(28, 8);
     printf("Governador");
     x = 2;
-    for(int i = 0; i < qtt; i++){
-        if(candidates[i].type == 'g'){
-            gotoxy(28,8+x);
+    for (int i = 0; i < qtt; i++)
+    {
+        if (candidates[i].type == 'g')
+        {
+            gotoxy(28, 8 + x);
             printf("[%d] - %s", candidates[i].votes, candidates[i].name);
             x++;
         }
     }
 
-    gotoxy(53,8);
+    gotoxy(53, 8);
     printf("Senador");
     x = 2;
-    for(int i = 0; i < qtt; i++){
-        if(candidates[i].type == 's'){
-            gotoxy(53,8+x);
+    for (int i = 0; i < qtt; i++)
+    {
+        if (candidates[i].type == 's')
+        {
+            gotoxy(53, 8 + x);
             printf("[%d] - %s", candidates[i].votes, candidates[i].name);
             x++;
         }
     }
 
-    gotoxy(3,20);
+    gotoxy(3, 20);
     printf("Deputado Federal");
     x = 2;
-    for(int i = 0; i < qtt; i++){
-        if(candidates[i].type == 'f'){
-            gotoxy(3,20+x);
+    for (int i = 0; i < qtt; i++)
+    {
+        if (candidates[i].type == 'f')
+        {
+            gotoxy(3, 20 + x);
             printf("[%d] - %s", candidates[i].votes, candidates[i].name);
             x++;
         }
     }
 
-    gotoxy(28 ,20);
+    gotoxy(28, 20);
     printf("Deputado Estadual");
     x = 2;
-    for(int i = 0; i < qtt; i++){
-        if(candidates[i].type == 'e'){
-            gotoxy(28 ,20+x);
+    for (int i = 0; i < qtt; i++)
+    {
+        if (candidates[i].type == 'e')
+        {
+            gotoxy(28, 20 + x);
             printf("[%d] - %s", candidates[i].votes, candidates[i].name);
             x++;
         }
+    }
+}
+
+COORD getMousexy()
+{
+    POINT pt;
+    GetCursorPos(&pt);
+    HWND hwnd = GetConsoleWindow();
+
+    RECT rc;
+    GetClientRect(hwnd, &rc);
+    ScreenToClient(hwnd, &pt);
+
+    HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_SCREEN_BUFFER_INFO inf;
+    GetConsoleScreenBufferInfo(hout, &inf);
+
+    COORD coord = {0, 0};
+    coord.X = MulDiv(pt.x, inf.srWindow.Right, rc.right);
+    coord.Y = MulDiv(pt.y, inf.srWindow.Bottom, rc.bottom);
+    return coord;
+}
+
+
+// BUGA O PROGRAMA NÃO SEI PORQUE, COLOQUEI O MESMO CÓDIGO SEM USAR FUNÇÃO E FUNCIONOU ¬¬'
+bool getConfirmButton()
+{
+    while (1)
+    {
+        COORD coord = getMousexy();
+        if (GetAsyncKeyState(WM_LBUTTONDOWN))
+        {
+            if (coord.X >= 118 && coord.X <= 130)
+            {
+                if (coord.Y >= 32 && coord.Y <= 35)
+                {
+                    return TRUE;
+                    break;
+                    ReleaseCapture();
+                }
+            }
+
+            if (coord.X >= 105 && coord.X <= 116)
+            {
+                if (coord.Y >= 32 && coord.Y <= 35)
+                {
+                    return FALSE;
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void disableEditMode(){
+    DWORD prev_mode;
+    HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
+    GetConsoleMode(hInput, &prev_mode);
+    SetConsoleMode(hInput, ENABLE_EXTENDED_FLAGS |
+                               (prev_mode & ~ENABLE_QUICK_EDIT_MODE));
+}
+
+void executeSound(char* sound){
+    if(strcmp(sound,"cavalo")==0){
+        PlaySoundA((LPCSTR) "sounds\\cavalo.wav", NULL, SND_FILENAME | SND_ASYNC);
+    }else if(strcmp(sound,"urna") == 0){
+        PlaySoundA((LPCSTR) "sounds\\urna.wav", NULL, SND_FILENAME | SND_ASYNC);
+    }else if(strcmp(sound,"urnafinal") == 0){
+        PlaySoundA((LPCSTR) "sounds\\urna-final.wav", NULL, SND_FILENAME | SND_ASYNC);
+    }else if(strcmp(sound,"windows") == 0){
+        PlaySoundA((LPCSTR) "sounds\\windows.wav", NULL, SND_FILENAME | SND_ASYNC);
+    }else if(strcmp(sound,"windowsstart") == 0){
+        PlaySoundA((LPCSTR) "sounds\\windows-start.wav", NULL, SND_FILENAME | SND_ASYNC);
+    }else if(strcmp(sound,"pare") == 0){
+        PlaySoundA((LPCSTR) "sounds\\pare.wav", NULL, SND_FILENAME | SND_ASYNC);
     }
 }
