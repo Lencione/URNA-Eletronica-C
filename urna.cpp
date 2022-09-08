@@ -4,27 +4,29 @@
 #include <string.h>
 #include <mmsystem.h>
 
+// INCLUIR O PARAMETROS NO COMPILAR PARA EXECUTAR  -lwinmm
 
 // CONSTANTES - TAMANHO DE TELA
 #define COLS 140
 #define ROWS 40
-#define CURRENTFOLDER "C:\\Users\\User\\Documents\\Codes\\URNA\\"
 
+// Estrutura de candidato
 typedef struct
 {
-    char *number;
-    char *name;
-    char *entourage;
-    char type;
-    int votes;
+    char *number; // Número
+    char *name; // Nome 
+    char *entourage; // Partido
+    char type; // Tipo : (P)residente, (G)overnador, (S)enador...
+    int votes; // Votos iniciando em 0
 } Candidate;
 
+// Estrutura de eleitor - Refatorada**
 typedef struct
 {
-    char ra[8];
+    char ra[9];
 } Voter;
 
-// FUNCOES
+// FUNCOES - Explicações em cada função
 void gotoxy(int x, int y);
 
 void hideCursorPosition();
@@ -46,28 +48,28 @@ COORD getMousexy();
 bool getConfirmButton();
 void disableEditMode();
 void executeSound(char *sound);
+void setup();
 
+// int main
 int main()
 {
     Candidate ent[30];
     Candidate *candidates = createCandidates(ent);
-    char ra[8];
-    char number[5];
-    Voter voters[100];
-    int qttNumbers = 0;  // Quantidade de numeros para voto
-    char voteType = '0'; // Tipo de voto
-    int i = 0;           // Contador de eleitores
-    bool existsRa;       // Verifica se RA já foi digitado anteriormente
-    char *phrase;        // Frase para Exibição
-    char voteConfirmation = 'n';
-    int candidateIndex;
+    char ra[9];                     // Variavel temporária para salvar o RA do aluno para verificação
+    char number[5];                 // Variavel temporária para salvar o numero do Candidato para verificação
+    Voter voters[100];              // Quantidade de eleitores, criado 100, mas poderia ser ilimitado   
+    int qttNumbers = 0;             // Quantidade de numeros para voto
+    char voteType = '0';            // Variável temporária para verificação do tipo do Candidato
+    int i = 0;                      // Contador de eleitores
+    bool existsRa;                  // Verifica se RA já foi digitado anteriormente
+    char *phrase;                   // Frase para Exibição
+    char voteConfirmation = 'n';    // Variável temporária para confirmação do voto
+    int candidateIndex;             // Variável temporária para salvar o índice do candidato selecionado
 
     system("color F0");
-    system("mode con:cols=140 lines=40");
-    executeSound("windowsstart");
-    disableEditMode();
-
-    renderLayout();
+    system("mode con:cols=140 lines=41");
+    setup();
+    
 
     while (1)
     {
@@ -79,16 +81,22 @@ int main()
         {
             resetVoteArea();
             renderButton(71, 33, "Encerrar");
+            // Copiando o retorno de requestNumbers para a variável "ra"
             strcpy(ra, requestNumbers(8, "Digite seu RA"));
+
+            // Caso seja "exit" (clicou no botão ENCERRAR) ou "reset", sai do loop
             if (strcmp(ra, "exit") == 0 || strcmp(ra, "reset") == 0)
             {
                 break;
             }
 
-            if (i >= 0)
+            // Se for o primeiro usuário do sistema, não precisa validar, com certeza será o primeiro elemento do array de Eleitores
+            if (i > 0)
             {
-                for (int j = 0; j <= i; j++)
+                // Caso não for o primeiro eleitor, varrer o array de Eleitores para conferir se já existe o RA digitado.
+                for (int j = 0; j < i; j++)
                 {
+                    existsRa = false;
                     if (strcmp(ra, voters[j].ra) == 0)
                     {
                         existsRa = true;
@@ -97,24 +105,26 @@ int main()
                         Sleep(2000);
                         break;
                     }
-                    else
-                    {
-                        existsRa = false;
-                    }
                 }
+            }else{
+                existsRa = false;
             }
+            // Enquanto o RA não for único, continue solicitando um RA.
         } while (existsRa == true);
         // Resetando variavel existsRa para a próxima iteração do loop
         existsRa = true;
+        
 
-        // Saindo para contagem dos votos!
+        // Caso tenha clicado em "Encerrar", solicite a senha para sair para a contagem dos votos.
         if (strcmp(ra, "exit") == 0)
         {
             resetVoteArea();
             strcpy(ra, requestNumbers(6, "Digite a senha"));
+            // Se acertar a senha, sair do loop
             if(strcmp(ra,"321987") == 0){
                 break;
             }else{
+                // Caso erre a senha, voltar a solicitar RA
                 strcpy(ra, "reset");
                 renderInformation("Senha invalida!");
                 executeSound("cavalo");
@@ -122,12 +132,14 @@ int main()
             }
         }
 
-        // Se resetar, começar de novo!
-
+        // Se resetar, solicitar RA novamente
+        // Caso seja um RA válido, entra na condicional
         if (strcmp(ra, "reset") != 0)
         {
-            // Copiando o valor da variavel temporaria RA para a struct voters.ra (eleitor)
+            // Copiando o valor da variavel temporaria RA para o array de eleitores
             strcpy(voters[i].ra, ra);
+            voters[i].ra[8] = '\0';
+            
 
             // Criar rotina para computar os votos:
             qttNumbers = 0;
@@ -169,7 +181,8 @@ int main()
                 // Pedir confirmação do voto
                 voteConfirmation = 'n';
                 do
-                {
+                {   
+                    // Resetar a variável que guarda o índice do candidato selecionado.
                     candidateIndex = -1;
                     resetCandidateList();
                     renderCandidateList(candidates, voteType);
@@ -180,7 +193,7 @@ int main()
                     // CASO FOR RESET, COMEÇA DE NOVO
                     if (strcmp(number, "reset") != 0)
                     {
-                        // Pegando o INDEX do candidato
+                        // Pegando o índice do candidato selecionado
                         for (int k = 0; k < 25; k++)
                         {
                             if (candidates[k].type == voteType)
@@ -206,6 +219,7 @@ int main()
 
                         renderCandidate(candidates, candidateIndex);
                         renderInformation("CONFIRMAR para confirmar e CORRIGIR para corrigir");
+                        // Solicitar confirmação clicando no botão de CONFIRMA ou CORRIGE
                         while (1)
                         {
                             COORD coord = getMousexy();
@@ -233,18 +247,19 @@ int main()
                     }
 
                 } while (voteConfirmation != 's');
+                // Depois de confirmado, adiciona um voto ao candidato
                 candidates[candidateIndex].votes++;
                 executeSound("urna");
             }
             renderEnd();
-            
-
+            // Aumenta uma iteração no array de eleitores
             i++;
         }
     }
 
     resetCandidateList();
     resetVoteArea();
+    // Função para ordenar os candidatos, conforme seus votos
     qsort(candidates, 30, sizeof(Candidate), votesCompare);
 
     showRank(candidates, 30);
@@ -252,6 +267,7 @@ int main()
 
     while (1)
     {
+        // Solicita o botão 's' para finalizar o programa
         voteConfirmation = getch();
         if (voteConfirmation == 's' || voteConfirmation == 'S')
         {
@@ -265,6 +281,7 @@ int main()
     return 0;
 }
 
+// Move o cursor até uma coordenada x.y no console.
 void gotoxy(int x, int y)
 {
     COORD coord;
@@ -273,6 +290,7 @@ void gotoxy(int x, int y)
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
 
+// Oculta a posição do cursor no console
 void hideCursorPosition()
 {
     HANDLE hOut;
@@ -283,6 +301,8 @@ void hideCursorPosition()
     SetConsoleCursorInfo(hOut, &cCursorInfo);
 }
 
+// Função genérica para desenhar o layout
+// Solicita coordenada x.y para onde o quadrado será iniciado e também solicita a quantidade de linhas e colunas para ser desenhada
 void renderBorder(int x, int y, int rows, int cols)
 {
     int finalx = x + cols - 1;
@@ -330,12 +350,17 @@ void renderBorder(int x, int y, int rows, int cols)
     }
 }
 
+// Renderiza um texto com uma moldura em volta de forma automática
+// Solicita coordenada x.y e o texto para ser exibido.
 void renderButton(int x, int y, char *text)
 {
     gotoxy(x + 3, y + 2);
     printf("%s", text);
     renderBorder(x, y, 5, strlen(text) + 6);
 }
+
+// Função que cria os botões clicáveis de forma automática.
+// Solicita coordenada x.y para inserir os botões no console
 void createButtons(int x, int y)
 {
     char *numbers[10] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"};
@@ -360,9 +385,12 @@ void createButtons(int x, int y)
     renderButton(x + (8 * 2) + 2, y + (5 * 4), "CONFIRMA");
 }
 
+//Chama as funções anteriores para montar o layout do programa.
 void renderLayout()
 {
+    // Esconde o cursor no console
     hideCursorPosition();
+
     // Criar borda total
     renderBorder(0, 0, ROWS, COLS);
 
@@ -384,6 +412,7 @@ void renderLayout()
     createButtons(100, 12);
 }
 
+// Função responsável por inicializar o array de candidatos.
 Candidate *createCandidates(Candidate *candidates)
 {
     candidates[0].number = "11";
@@ -574,6 +603,7 @@ Candidate *createCandidates(Candidate *candidates)
     return candidates;
 }
 
+// Limpa a área da lista de candidatos
 void resetCandidateList()
 {
     for (int i = 2; i < 138; i++)
@@ -586,6 +616,7 @@ void resetCandidateList()
     }
 }
 
+// Exibe a lista de candidatos no topo do programa conforme o tipo (Presidente, Governardo, Senador...) passado
 void renderCandidateList(Candidate *candidates, char type)
 {
     resetCandidateList();
@@ -626,6 +657,9 @@ void renderCandidateList(Candidate *candidates, char type)
     }
 }
 
+// Função que solicita números ao usuário
+// Recebe um inteiro (quantidade de números solicitados) e uma string (Informação solicitada)
+// Mapeia os botões para receber o valor de cada número e entra em um loop infinito lendo as informações do mouse
 char *requestNumbers(int length, char *message)
 {
     gotoxy(3, 13);
@@ -645,8 +679,10 @@ char *requestNumbers(int length, char *message)
             while (1)
             {
                 COORD coord = getMousexy();
+                // Se botão esquerdo do mouse for clicado
                 if (GetAsyncKeyState(0x01))
                 {
+                    // Conforme a coordenada que foi clicada
                     if (coord.X >= 100 && coord.X <= 106)
                     {
                         if (coord.Y >= 12 && coord.Y <= 16)
@@ -771,19 +807,26 @@ char *requestNumbers(int length, char *message)
                 }
                 // PARA NÃO PROCESSAR 1000X EM UM CLIQUE
                 Sleep(100);
+                // Função para desativar o clique do mouse, forçando o mouse_up
                 mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
             }
 
+            // Para ter certeza que o botão clicado é um número, confirmar código ASCII dele
         } while (let < 48 || let > 57);
         gotoxy(6 + (i * 7), 17);
         printf("%c", let);
+        // Exibe o número digitado no campo solicitado.
         numbers[i] = let;
+        // Concatena o número na string que será retornada
     }
+    // Flag para sinalizar o final da string
     numbers[length] = '\0';
-    gotoxy(25, 25);
 
+    // retorna o número digitado.
     return numbers;
 }
+
+// Limpa a área de voto
 void resetVoteArea()
 {
     for (int i = 2; i < 85; i++)
@@ -796,12 +839,15 @@ void resetVoteArea()
     }
 }
 
+// Exibe uma informação no contrapé do programa
+// Solicita uma string que será exibida
 void renderInformation(char *message)
 {
     gotoxy(3, 35);
     printf("%s", message);
 }
 
+// Exibe os dados do candidatos selecionado abaixo dos números.
 void renderCandidate(Candidate *candidates, int index)
 {
     gotoxy(3, 20);
@@ -815,12 +861,15 @@ void renderCandidate(Candidate *candidates, int index)
     }
 }
 
+// Após validar todos os votos do eleitor, exibe finalização da votação
 void renderEnd()
 {
     resetCandidateList();
     resetVoteArea();
     gotoxy(28, 18);
     printf("CARREGANDO");
+
+    // Exibe LOADING
     for (int i = 0; i < 20; i++)
     {
         gotoxy(28 + i, 19);
@@ -829,6 +878,7 @@ void renderEnd()
     }
     resetVoteArea();
     
+    // ASCII ART - FIM
     gotoxy(28, 18);
     printf("%c%c%c %c %c%c %c%c", 219, 223, 223, 219, 219, 220, 220, 219);
     gotoxy(28, 19);
@@ -840,6 +890,11 @@ void renderEnd()
     resetVoteArea();
 }
 
+// Função para comparar itens do array de candidatos
+// Retorna negativo para quem tem menos votos
+// Retorna positivo para quem tem mais votos
+// Retorna 0 para quem tiver a mesma quantidade de votos
+// Ordena através da função qsort
 int votesCompare(const void *x, const void *y)
 {
     int first = ((Candidate *)x)->votes;
@@ -847,6 +902,8 @@ int votesCompare(const void *x, const void *y)
     return (second - first);
 }
 
+
+// Exibe na tela os candidatos de forma ordenada por votos
 void showRank(Candidate *candidates, int qtt)
 {
     gotoxy(3, 8);
@@ -915,6 +972,8 @@ void showRank(Candidate *candidates, int qtt)
     }
 }
 
+// Pega a coordenada x.y do MOUSE em relação ao CMD na proporção da tela
+// Em seguida, Converte as coordenadas na proporção do CMD
 COORD getMousexy()
 {
     POINT pt;
@@ -930,6 +989,7 @@ COORD getMousexy()
     GetConsoleScreenBufferInfo(hout, &inf);
 
     COORD coord = {0, 0};
+    // Converte as coordenadas x.y do mouse na proporção do CMD
     coord.X = MulDiv(pt.x, inf.srWindow.Right, rc.right);
     coord.Y = MulDiv(pt.y, inf.srWindow.Bottom, rc.bottom);
     return coord;
@@ -966,6 +1026,7 @@ bool getConfirmButton()
     }
 }
 
+// Desativa o modo de edição do CMD, dessa forma o clique não fica travado na tela.
 void disableEditMode(){
     DWORD prev_mode;
     HANDLE hInput = GetStdHandle(STD_INPUT_HANDLE);
@@ -974,6 +1035,8 @@ void disableEditMode(){
                                (prev_mode & ~ENABLE_QUICK_EDIT_MODE));
 }
 
+// Função que executa os sons
+// Recebe uma string para selecionar o som.
 void executeSound(char* sound){
     if(strcmp(sound,"cavalo")==0){
         PlaySoundA((LPCSTR) "sounds\\cavalo.wav", NULL, SND_FILENAME | SND_ASYNC);
@@ -988,4 +1051,11 @@ void executeSound(char* sound){
     }else if(strcmp(sound,"pare") == 0){
         PlaySoundA((LPCSTR) "sounds\\pare.wav", NULL, SND_FILENAME | SND_ASYNC);
     }
+}
+
+// Função de inicialização do programa.
+void setup(){
+    executeSound("windowsstart");
+    disableEditMode();
+    renderLayout();
 }
