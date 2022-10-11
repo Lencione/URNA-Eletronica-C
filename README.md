@@ -7,11 +7,11 @@ Colher os votos por ilimitadas vezes, até que o programa seja solicitado para e
 Mostrar os votos de cada candidato antes de finalizar o programa.
 
 ### Bibliotecas usadas
-**<stdio.h>** - Entrada e saída padrão da linguagem
-**<windows.h>** - Manipulação e informações do windows
-**<conio.h>** - Entrada e saída além de funções com o windows
-**<string.h>** - Manipulação de strings
-**<mmsystem.h>** - Manipulação de áudio
+**<stdio.h>** - Entrada e saída padrão da linguagem<br>
+**<windows.h>** - Manipulação e informações do windows<br>
+**<conio.h>** - Entrada e saída além de funções com o windows<br>
+**<string.h>** - Manipulação de strings<br>
+**<mmsystem.h>** - Manipulação de áudio<br>
 
 ### O que torna o sistema diferente?
 O programa foi todo projetado para funcionar com a maior semelhança possível de uma urna eletrônica verdadeira.
@@ -23,3 +23,4 @@ Reaproveitamento de funções em todo o projeto.
 Uso de sons em formato WAV para deixar o sistema mais didático.
 
  
+![gif-do-garoto-menino-dando-joinha](https://user-images.githubusercontent.com/44005188/194983145-dab6bef7-ba1e-4237-b663-afef7042d98e.gif)
